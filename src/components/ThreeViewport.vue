@@ -14,6 +14,8 @@ const props = defineProps({
     config: Object
 })
 
+const emit = defineEmits(['stats-update'])
+
 const container = ref(null)
 let scene, camera, renderer, composer, bloomPass, controls, gridHelper
 let matteFloor, reflectorFloor
@@ -129,6 +131,20 @@ const loadFile = (file) => {
     }
 }
 
+const loadFromUrl = (url) => {
+    if (url.endsWith('.obj')) {
+        const loader = new OBJLoader()
+        loader.load(url, (object) => {
+            extractPoints(object)
+        })
+    } else {
+        const loader = new GLTFLoader()
+        loader.load(url, (gltf) => {
+            extractPoints(gltf.scene)
+        })
+    }
+}
+
 const extractPoints = (object) => {
     originalPoints = []
     object.traverse((child) => {
@@ -190,6 +206,10 @@ const updatePipeline = () => {
     workingPoints = getSampledPointsCandidate()
     performSorting()
     updateVisuals()
+    emit('stats-update', {
+        original: originalPoints.length,
+        sampled: workingPoints.length
+    })
 }
 
 const getSampledPointsCandidate = () => {
@@ -285,7 +305,7 @@ watch(() => props.config.bloomStrength, updateBloomSettings)
 watch(() => props.config.colors.background, (val) => scene.background.set(val))
 watch(() => props.config.colors.curve, updateVisuals)
 
-defineExpose({ generateDemoData, fitCamera, takeScreenshot, loadFile })
+defineExpose({ generateDemoData, fitCamera, takeScreenshot, loadFile, loadFromUrl })
 
 onMounted(() => {
     init()
