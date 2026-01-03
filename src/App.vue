@@ -37,6 +37,7 @@ const config = reactive({
 })
 
 const viewport = ref(null)
+const isDrawerOpen = ref(false)
 
 const onCapture = () => viewport.value?.takeScreenshot()
 const onDemo = () => viewport.value?.generateDemoData()
@@ -53,8 +54,11 @@ const onRandomAll = () => {
 <template>
   <div class="app-container">
     <ThreeViewport ref="viewport" :config="config" />
+    
     <ControlPanel 
         v-model:config="config" 
+        :isOpen="isDrawerOpen"
+        @update:isOpen="isDrawerOpen = $event"
         @capture="onCapture" 
         @demo="onDemo" 
         @reset="onReset"
