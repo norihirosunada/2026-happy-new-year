@@ -43,18 +43,22 @@ const uiMode = ref('simple')
 const pointStats = reactive({ original: 0, sampled: 0 })
 
 const onStatsUpdate = (stats) => {
-    // Simpleモードかつモデル読み込み時（または点数が大きく変わった時）に
-    // サンプリング後の点数が 100〜5000 の範囲に収まるよう調整しつつ、レート自体は 100 以上を維持
-    if (uiMode.value === 'simple' && (pointStats.original === 0 || Math.abs(stats.original - pointStats.original) > 100)) {
-        let targetRate = Math.floor(stats.original / 2000) // 理想は2000点付近
-        targetRate = Math.max(100, Math.min(500, targetRate)) // 最低レート100を確保
-        
-        if (config.sampleRate !== targetRate) {
-            config.sampleRate = targetRate
-        }
-    }
+    // モデル読み込み時（または点数が大きく変わった時）のみ自動調整を許可する
+    const isModelLoaded = pointStats.original === 0 || Math.abs(stats.original - pointStats.original) > 10
+    
     pointStats.original = stats.original
     pointStats.sampled = stats.sampled
+
+    // 簡易モード時、かつモデル読み込み直後のみ、点数が極端な場合に自動調整
+    if (uiMode.value === 'simple' && isModelLoaded) {
+        if (pointStats.sampled > 10000 || pointStats.sampled < 100) {
+            // 標準的なターゲット（3000点）に向けてレートを計算
+            const targetRate = Math.max(100, Math.floor(pointStats.original / 3000))
+            if (config.sampleRate !== targetRate) {
+                config.sampleRate = targetRate
+            }
+        }
+    }
 }
 
 const onCapture = () => viewport.value?.takeScreenshot()
@@ -63,14 +67,25 @@ const onReset = () => viewport.value?.fitCamera()
 const onFileUpload = (file) => viewport.value?.loadFile(file)
 
 const onRandomAll = () => {
-    // 100以上のレートかつ、結果が100〜5000点に収まる範囲を制限
-    const minRate = Math.max(100, Math.floor(pointStats.original / 5000))
-    const maxRate = Math.min(500, Math.max(minRate, Math.floor(pointStats.original / 100)))
+    if (pointStats.original === 0) return
+
+    // サンプリング後の点数が「500〜10,000点」に収まる範囲をモデルの点数から計算
+    // ただしパフォーマンスのためレートの上限は設けず、下限は100に固定
+    const minRate = Math.max(100, Math.floor(pointStats.original / 10000)) // これより小さいと1万点を超える
+    const maxRate = Math.max(minRate + 1, Math.floor(pointStats.original / 500))  // これより大きいと500点を下回る
     
     config.sampleRate = Math.floor(Math.random() * (maxRate - minRate + 1)) + minRate
     config.colors.curve = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')
-    // 接続モードもランダムに（Simpleモードで選べる nearest か contour）
+    
+    // 接続モードもランダムに
     config.connectionMode = Math.random() > 0.5 ? 'nearest' : 'contour'
+    
+    // 等高線モードの場合は軸と分割数もランダムに
+    if (config.connectionMode === 'contour') {
+        const axes = ['x', 'y', 'z']
+        config.sliceAxis = axes[Math.floor(Math.random() * axes.length)]
+        config.sliceCount = Math.floor(Math.random() * 100) + 20 // 20〜120分割
+    }
 }
 
 // キーボードショートカットでプロモード切り替え

@@ -74,42 +74,39 @@ const onTouchEnd = (e) => {
     <!-- モバイル用ハンドル -->
     <div class="mobile-handle" @click="emit('update:isOpen', !isOpen)">
         <div class="handle-bar"></div>
-        <span v-if="!isOpen" class="handle-text">{{ uiMode === 'simple' ? 'Swipe for Simple Menu' : 'Swipe for Pro Menu' }}</span>
     </div>
 
     <!-- 簡易モード UI -->
-    <div v-if="uiMode === 'simple'" class="simple-mode-content">
-      <h2 class="text-xl font-bold mb-6 border-b border-cyan-500 pb-2 text-cyan-400">Simple Mode</h2>
-      
-      <div class="control-group">
-        <label class="section-label">接続モード</label>
-        <select v-model="localConfig.connectionMode" class="simple-select">
-          <option value="nearest">経路探索 (標準)</option>
-          <option value="contour">スライス (等高線)</option>
-        </select>
-        <div v-if="localConfig.connectionMode === 'contour'" class="mt-4 pl-4 border-l border-cyan-700">
-             <label class="flex justify-between text-xs">分割数 <span>{{ localConfig.sliceCount }}</span></label>
-             <input type="range" v-model.number="localConfig.sliceCount" min="5" max="200" class="mt-1">
+    <div v-if="props.uiMode === 'simple'" class="simple-mode-content">
+      <div class="simple-settings-row">
+        <div class="color-picker-wrapper">
+          <input type="color" v-model="localConfig.colors.curve" />
         </div>
+        <div class="simple-label">Stroke & Density</div>
       </div>
 
-      <div class="control-group">
-        <div class="flex justify-between items-center bg-gray-800/50 p-3 rounded-lg border border-gray-700">
-          <label class="mb-0 font-bold">曲線の色</label>
-          <input type="color" v-model="localConfig.colors.curve" class="w-16 h-8 bg-transparent cursor-pointer">
-        </div>
+      <div class="simple-sampling-row">
+        <input 
+          type="range" 
+          v-model.number="localConfig.sampleRate" 
+          :min="100" 
+          :max="5000" 
+          class="mini-range"
+        />
       </div>
 
-      <div class="flex flex-col gap-4 mt-8">
-        <button @click="emit('random-all')" class="action-btn randomize-btn">
-          ランダム生成 🎲
+      <div class="simple-actions-row">
+        <button @click="emit('random-all')" class="icon-action-btn randomize" title="Randomize">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
         </button>
-        <button @click="emit('capture')" class="action-btn capture-btn">
-          画像を保存 📷
+        <button @click="emit('capture')" class="icon-action-btn capture" title="Download Image">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         </button>
       </div>
       
-      <p class="text-[10px] text-gray-500 mt-8 text-center opacity-50">Press secret key for Pro mode</p>
+      <div class="pro-hint">
+        <span class="dot"></span> Pro Mode Ready
+      </div>
     </div>
 
     <!-- プロモード UI (既存) -->
@@ -138,12 +135,12 @@ const onTouchEnd = (e) => {
           </div>
 
           <div class="section-title">サンプリング</div>
-        <div class="control-group">
-          <label class="flex justify-between items-end">
-            <div>レート <span class="text-cyan-400 font-bold ml-1">{{ localConfig.sampleRate }}</span></div>
-            <div class="text-[10px] text-gray-500 mb-0.5">Points: {{ pointStats.original }} &rarr; {{ pointStats.sampled }}</div>
-          </label>
-          <input type="range" v-model.number="localConfig.sampleRate" min="1" max="500">
+          <div class="control-group">
+            <label class="flex justify-between items-end">
+              <div>レート <span class="text-cyan-400 font-bold ml-1">{{ localConfig.sampleRate }}</span></div>
+              <div class="text-[10px] text-gray-500 mb-0.5">Points: {{ pointStats.original }} &rarr; {{ pointStats.sampled }}</div>
+            </label>
+            <input type="range" v-model.number="localConfig.sampleRate" min="1" max="500">
             <div class="flex gap-4 mt-2">
               <label class="flex items-center gap-1"><input type="radio" v-model="localConfig.samplingMode" value="interval"> 等間隔</label>
               <label class="flex items-center gap-1"><input type="radio" v-model="localConfig.samplingMode" value="random"> ランダム</label>
@@ -264,81 +261,145 @@ const onTouchEnd = (e) => {
     position: absolute;
     top: 20px;
     right: 20px;
-    background: rgba(15, 15, 25, 0.95);
+    background: rgba(10, 10, 18, 0.9);
     padding: 24px;
-    border-radius: 16px;
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(0, 255, 255, 0.1);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     width: 320px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
     max-height: 90vh;
     overflow-y: auto;
     z-index: 20;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 簡易モードの独自スタイル */
 .mode-simple {
-    width: 340px;
-    border: 2px solid rgba(0, 255, 255, 0.2);
+    width: 240px; /* さらに細身に */
+    padding: 18px;
+    border: 1px solid rgba(0, 255, 255, 0.15);
 }
 
-.section-label {
-    display: block;
-    font-size: 0.75rem;
+.simple-mode-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.simple-settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.simple-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.4);
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 12px;
-    color: #00ffff;
-    font-weight: bold;
 }
 
-.simple-select {
+.simple-sampling-row {
+    margin-bottom: 20px;
+}
+
+.compact-select {
     width: 100%;
-    background: #1a1a2e;
-    color: white;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: #00ffff;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
+    background-position: right 8px center;
+    background-size: 14px;
 }
 
-.action-btn {
-    width: 100%;
-    padding: 16px;
+.color-picker-wrapper {
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
-    font-weight: bold;
-    font-size: 1rem;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.color-picker-wrapper input[type="color"] {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: none;
 }
 
-.randomize-btn {
-    background: linear-gradient(135deg, #7c3aed, #2563eb);
-    color: white;
+.simple-actions-row {
+    display: flex;
+    gap: 12px;
 }
 
-.capture-btn {
-    background: #059669;
-    color: white;
+.icon-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 54px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: rgba(255, 255, 255, 0.6);
 }
 
-.action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+.icon-action-btn:hover {
+    transform: scale(1.02) translateY(-1px);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(0, 255, 255, 0.3);
+    color: #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
 }
 
-.action-btn:active {
-    transform: translateY(0);
+.icon-action-btn:active {
+    transform: scale(0.98);
 }
 
+.pro-hint {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+    text-align: center;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.pro-hint .dot {
+    width: 4px;
+    height: 4px;
+    background: #00ffff;
+    border-radius: 50%;
+    box-shadow: 0 0 5px #00ffff;
+}
+
+.mini-range {
+    width: 100%;
+    height: 4px;
+}
+
+/* プロモード用共有スタイル */
 .tabs-header {
   display: flex;
   background: rgba(0, 0, 0, 0.3);
@@ -410,20 +471,6 @@ button.secondary {
     border: 1px solid #555;
 }
 
-button:hover {
-    opacity: 0.8;
-}
-
-button:active {
-    transform: scale(0.98);
-}
-
-.mode-specific {
-    margin-top: 10px;
-    padding-left: 10px;
-    border-left: 1px solid #00ffff;
-}
-
 .mobile-handle {
     display: none;
 }
@@ -435,11 +482,17 @@ button:active {
         right: 0;
         bottom: 0;
         width: 100%;
-        max-height: 80vh;
-        border-radius: 24px 24px 0 0;
-        transform: translateY(calc(100% - 44px));
+        max-height: 85vh;
+        border-radius: 30px 30px 0 0;
+        transform: translateY(calc(100% - 50px));
         padding-top: 0;
         overflow-y: visible;
+        background: rgba(10, 10, 18, 0.95);
+    }
+
+    .ui-panel.mode-simple {
+        width: 100%;
+        padding: 0 0 10px 0; /* ハンドルエリアを確保 */
     }
 
     .ui-panel.is-open {
@@ -459,23 +512,27 @@ button:active {
 
     .handle-bar {
         width: 40px;
-        height: 4px;
-        background: rgba(0, 255, 255, 0.5);
-        border-radius: 2px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
         margin-bottom: 6px;
     }
 
     .handle-text {
         font-size: 10px;
-        color: rgba(0, 255, 255, 0.6);
+        color: rgba(255, 255, 255, 0.4);
         text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: bold;
+        letter-spacing: 1.5px;
+        font-weight: 700;
     }
 
-    .tab-content, .simple-mode-content {
+    .simple-mode-content {
+        padding: 10px 24px 30px;
+    }
+
+    .tab-content, .pro-mode-content {
         padding: 0 24px 30px;
-        max-height: calc(80vh - 80px);
+        max-height: calc(85vh - 60px);
         overflow-y: auto;
     }
 
