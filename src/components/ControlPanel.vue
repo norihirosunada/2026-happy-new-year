@@ -56,6 +56,18 @@ const sliderValue = computed({
   }
 })
 
+// アクセントカラーに対するコントラストカラー（黒 or 白）を計算
+const contrastColor = computed(() => {
+  const hex = localConfig.value.colors.curve.replace('#', '')
+  if (hex.length !== 6) return '#ffffff'
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  // 近似輝度の計算 (W3C推奨の係数を使用)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.6 ? '#111111' : '#ffffff'
+})
+
 // ジェスチャー処理
 const onTouchStart = (e) => {
     touchStartY.value = e.touches[0].clientY
@@ -84,7 +96,11 @@ const onTouchEnd = (e) => {
   <div 
     class="ui-panel" 
     :class="{ 'is-open': isOpen, 'mode-simple': uiMode === 'simple' }" 
-    id="main-panel"
+    :style="{ 
+      '--accent-color': localConfig.colors.curve,
+      '--accent-contrast-color': contrastColor 
+    }"
+    ref="panel"
     @touchstart="onTouchStart"
     @touchend="onTouchEnd"
   >
@@ -99,31 +115,30 @@ const onTouchEnd = (e) => {
         <div class="color-picker-wrapper">
           <input type="color" v-model="localConfig.colors.curve" />
         </div>
-        <div class="simple-label">Stroke & Density</div>
-      </div>
-
-      <div class="simple-sampling-row">
-        <input 
-          type="range" 
-          v-model.number="sliderValue" 
-          :min="0" 
-          :max="100" 
-          step="any"
-          class="mini-range"
-        />
+        <div class="slider-container">
+          <input 
+            type="range" 
+            v-model.number="sliderValue" 
+            :min="0" 
+            :max="100" 
+            step="any"
+            class="mini-range"
+          />
+        </div>
       </div>
 
       <div class="simple-actions-row">
-        <button @click="emit('random-all')" class="icon-action-btn randomize" title="Randomize">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <button @click="emit('random-all')" class="primary-btn" title="Randomize">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+          <span>Shuffle</span>
         </button>
-        <button @click="emit('capture')" class="icon-action-btn capture" title="Download Image">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <button @click="emit('capture')" class="minimal-icon-btn" title="Download Image">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         </button>
       </div>
       
       <div class="pro-hint">
-        <span class="dot"></span> Pro Mode Ready
+        <span class="dot"></span> Dev Mode ⇧⌘P
       </div>
     </div>
 
@@ -308,37 +323,34 @@ const onTouchEnd = (e) => {
 .simple-settings-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
-.simple-label {
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.simple-sampling-row {
+    gap: 16px;
     margin-bottom: 20px;
+}
+
+.slider-container {
+    flex: 1;
 }
 
 .compact-select {
     width: 100%;
     background: rgba(255, 255, 255, 0.05);
-    color: #00ffff;
-    border: 1px solid rgba(0, 255, 255, 0.2);
+    color: var(--accent-color);
+    border: 1px solid color-mix(in srgb, var(--accent-color), transparent 80%);
     border-radius: 10px;
     padding: 10px 12px;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    /* Use currentcolor for SVG or dynamic color string if needed, 
+       but for simplicity we'll use a dynamic mask or just accept the border/text change.
+       Actually, we can use a simpler approach for the icon if we use a mask or separate element.
+       Let's use a standard arrow that doesn't rely on hardcoded colors in the URL. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-size: 14px;
+    opacity: 0.8;
 }
 
 .color-picker-wrapper {
@@ -363,53 +375,81 @@ const onTouchEnd = (e) => {
 
 .simple-actions-row {
     display: flex;
-    gap: 12px;
+    align-items: center;
+    gap: 16px;
+    margin-top: 4px;
 }
 
-.icon-action-btn {
+.primary-btn {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 54px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.03);
+    gap: 8px;
+    height: 44px;
+    border-radius: 22px;
+    border: none;
+    background: var(--accent-color);
+    color: var(--accent-contrast-color);
+    font-size: 0.85rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-color), transparent 70%);
 }
 
-.icon-action-btn:hover {
-    transform: scale(1.02) translateY(-1px);
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(0, 255, 255, 0.3);
-    color: #00ffff;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+.primary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--accent-color), transparent 60%);
+    filter: brightness(1.1);
 }
 
-.icon-action-btn:active {
-    transform: scale(0.98);
+.primary-btn:active {
+    transform: translateY(0);
 }
 
-.pro-hint {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.3);
-    text-align: center;
-    margin-top: 4px;
-    letter-spacing: 0.5px;
+.minimal-icon-btn {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: color-mix(in srgb, var(--accent-color), white 40%);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.minimal-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--accent-color);
+    opacity: 1;
+}
+
+.minimal-icon-btn:active {
+    transform: scale(0.95);
+}
+
+.pro-hint {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
     gap: 6px;
 }
 
 .pro-hint .dot {
     width: 4px;
     height: 4px;
-    background: #00ffff;
     border-radius: 50%;
-    box-shadow: 0 0 5px #00ffff;
+    background: var(--accent-color);
+    box-shadow: 0 0 8px var(--accent-color);
 }
 
 .mini-range {
@@ -437,7 +477,7 @@ const onTouchEnd = (e) => {
 
 .tab-btn.active {
   background: #444;
-  color: #00ffff;
+  color: var(--accent-color);
 }
 
 .control-group {
@@ -449,8 +489,8 @@ const onTouchEnd = (e) => {
     font-weight: bold;
     margin-top: 15px;
     margin-bottom: 10px;
-    color: #00ffff;
-    border-left: 3px solid #00ffff;
+    color: var(--accent-color);
+    border-left: 3px solid var(--accent-color);
     padding-left: 8px;
     opacity: 0.8;
 }
@@ -464,6 +504,7 @@ label {
 
 input[type="range"] {
     width: 100%;
+    accent-color: var(--accent-color);
 }
 
 select {
