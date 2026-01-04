@@ -54,6 +54,28 @@ const init = () => {
 
     controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
+    controls.autoRotate = false
+    controls.autoRotateSpeed = -2.0 // 反時計回り
+
+    let idleTimer = null
+    const resetIdleTimer = () => {
+        if (idleTimer) clearTimeout(idleTimer)
+        controls.autoRotate = false
+        idleTimer = setTimeout(() => {
+            controls.autoRotate = true
+        }, 5000)
+    }
+
+    controls.addEventListener('start', () => {
+        if (idleTimer) clearTimeout(idleTimer)
+        controls.autoRotate = false
+    })
+
+    controls.addEventListener('end', () => {
+        resetIdleTimer()
+    })
+
+    resetIdleTimer() // 初期タイマー開始
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
     scene.add(ambientLight)
