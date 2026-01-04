@@ -55,7 +55,7 @@ const init = () => {
     controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
     controls.autoRotate = false
-    controls.autoRotateSpeed = -2.0 // 反時計回り
+    controls.autoRotateSpeed = -0.5 // 反時計回り (ゆっくり)
 
     let idleTimer = null
     const resetIdleTimer = () => {
