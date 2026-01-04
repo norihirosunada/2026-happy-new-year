@@ -6,7 +6,7 @@ import ControlPanel from './components/ControlPanel.vue'
 const config = reactive({
     connectionMode: 'nearest',
     samplingMode: 'random',
-    sampleRate: 100,
+    targetPoints: 3000,
     curveTension: 0.5,
     rawPointSize: 0.15,
     featurePointSize: 0.5,
@@ -21,7 +21,7 @@ const config = reactive({
     enableShadow: true,
     tubeRadius: 0.0005,
     tubeRadialSegments: 6,
-    maxPointsLimit: 20000,
+    maxPointsLimit: 10000,
     captureAspect: '16:9',
     captureOrientation: 'landscape',
     showGuide: true,
@@ -49,14 +49,11 @@ const onStatsUpdate = (stats) => {
     pointStats.original = stats.original
     pointStats.sampled = stats.sampled
 
-    // 簡易モード時、かつモデル読み込み直後のみ、点数が極端な場合に自動調整
+    // 簡易モード時、かつモデル読み込み直後のみ、適正な目標点数（3000点など）にセット
     if (uiMode.value === 'simple' && isModelLoaded) {
-        if (pointStats.sampled > 10000 || pointStats.sampled < 100) {
-            // 標準的なターゲット（3000点）に向けてレートを計算
-            const targetRate = Math.max(100, Math.floor(pointStats.original / 3000))
-            if (config.sampleRate !== targetRate) {
-                config.sampleRate = targetRate
-            }
+        // 目標点数が極端に少ない、または多すぎる場合は3000点にリセット
+        if (config.targetPoints > 20000 || config.targetPoints < 100) {
+            config.targetPoints = 3000
         }
     }
 }
@@ -69,12 +66,8 @@ const onFileUpload = (file) => viewport.value?.loadFile(file)
 const onRandomAll = () => {
     if (pointStats.original === 0) return
 
-    // サンプリング後の点数が「500〜10,000点」に収まる範囲をモデルの点数から計算
-    // ただしパフォーマンスのためレートの上限は設けず、下限は100に固定
-    const minRate = Math.max(100, Math.floor(pointStats.original / 10000)) // これより小さいと1万点を超える
-    const maxRate = Math.max(minRate + 1, Math.floor(pointStats.original / 500))  // これより大きいと500点を下回る
-    
-    config.sampleRate = Math.floor(Math.random() * (maxRate - minRate + 1)) + minRate
+    // 目標点数を 500〜10,000点 の範囲でランダム化
+    config.targetPoints = Math.floor(Math.random() * 9500) + 500
     config.colors.curve = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')
     
     // 接続モードもランダムに

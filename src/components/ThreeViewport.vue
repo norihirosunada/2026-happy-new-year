@@ -213,18 +213,24 @@ const updatePipeline = () => {
 }
 
 const getSampledPointsCandidate = () => {
+    if (originalPoints.length === 0) return []
     const points = []
-    const sampleRate = parseInt(props.config.sampleRate)
+    
+    // 目標点数から間引き率（sampleRate / interval）を逆算
+    const targetPoints = Math.max(1, props.config.targetPoints)
+    const interval = Math.max(1, Math.floor(originalPoints.length / targetPoints))
+    
     const totalPoints = originalPoints.length
     if (props.config.samplingMode === 'random') {
-        let targetCount = Math.max(2, Math.floor(totalPoints / sampleRate))
         const indices = new Set()
-        while (indices.size < targetCount && indices.size < totalPoints) { indices.add(Math.floor(Math.random() * totalPoints)) }
+        while (indices.size < targetPoints && indices.size < totalPoints) { 
+            indices.add(Math.floor(Math.random() * totalPoints)) 
+        }
         const sortedIndices = Array.from(indices).sort((a, b) => a - b)
         for (const idx of sortedIndices) points.push(originalPoints[idx].clone())
     } else {
-        const windowSize = Math.max(1, Math.floor(sampleRate / 2))
-        for (let i = 0; i < totalPoints; i += sampleRate) {
+        const windowSize = Math.max(1, Math.floor(interval / 2))
+        for (let i = 0; i < totalPoints; i += interval) {
             let avg = new THREE.Vector3(0, 0, 0); let count = 0
             const start = Math.max(0, i - windowSize), end = Math.min(totalPoints - 1, i + windowSize)
             for (let j = start; j <= end; j++) { avg.add(originalPoints[j]); count++ }
@@ -288,7 +294,7 @@ const updateVisuals = () => {
 }
 
 // Watchers
-watch(() => props.config.sampleRate, updatePipeline)
+watch(() => props.config.targetPoints, updatePipeline)
 watch(() => props.config.connectionMode, updatePipeline)
 watch(() => props.config.samplingMode, updatePipeline)
 watch(() => props.config.sliceAxis, updatePipeline)

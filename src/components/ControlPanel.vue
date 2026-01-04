@@ -39,6 +39,23 @@ const handleFileUpload = (e) => {
   }
 }
 
+// サンプリングのスライダー用ロジック (3次関数でより緩やかな変化を実現)
+const MIN_POINTS = 100
+const MAX_POINTS = 10000
+
+const sliderValue = computed({
+  get: () => {
+    const val = props.config.targetPoints || 3000
+    const normalized = Math.max(0, (val - MIN_POINTS) / (MAX_POINTS - MIN_POINTS))
+    return 100 * Math.pow(normalized, 1/3)
+  },
+  set: (pos) => {
+    // 3乗のカーブを採用することで、低〜中密度域の変化をより「緩やか」にする
+    const val = Math.round(MIN_POINTS + (MAX_POINTS - MIN_POINTS) * Math.pow(pos / 100, 3))
+    localConfig.value.targetPoints = val
+  }
+})
+
 // ジェスチャー処理
 const onTouchStart = (e) => {
     touchStartY.value = e.touches[0].clientY
@@ -88,9 +105,10 @@ const onTouchEnd = (e) => {
       <div class="simple-sampling-row">
         <input 
           type="range" 
-          v-model.number="localConfig.sampleRate" 
-          :min="100" 
-          :max="5000" 
+          v-model.number="sliderValue" 
+          :min="0" 
+          :max="100" 
+          step="any"
           class="mini-range"
         />
       </div>
@@ -137,10 +155,10 @@ const onTouchEnd = (e) => {
           <div class="section-title">サンプリング</div>
           <div class="control-group">
             <label class="flex justify-between items-end">
-              <div>レート <span class="text-cyan-400 font-bold ml-1">{{ localConfig.sampleRate }}</span></div>
-              <div class="text-[10px] text-gray-500 mb-0.5">Points: {{ pointStats.original }} &rarr; {{ pointStats.sampled }}</div>
+              <div>点数 <span class="text-cyan-400 font-bold ml-1">{{ localConfig.targetPoints }}</span></div>
+              <div class="text-[10px] text-gray-500 mb-0.5">Stats: {{ pointStats.original }} &rarr; {{ pointStats.sampled }}</div>
             </label>
-            <input type="range" v-model.number="localConfig.sampleRate" min="1" max="500">
+            <input type="range" v-model.number="sliderValue" min="0" max="100" step="any">
             <div class="flex gap-4 mt-2">
               <label class="flex items-center gap-1"><input type="radio" v-model="localConfig.samplingMode" value="interval"> 等間隔</label>
               <label class="flex items-center gap-1"><input type="radio" v-model="localConfig.samplingMode" value="random"> ランダム</label>
