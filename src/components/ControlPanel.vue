@@ -41,16 +41,40 @@ const handleFileUpload = (e) => {
 
 // サンプリングのスライダー用ロジック (3次関数でより緩やかな変化を実現)
 const MIN_POINTS = 100
-const MAX_POINTS = 10000
+const MAX_POINTS = 5000
+const SIMPLE_STEPS = [100, 500, 1000, 1500, 2000, 3000, 4000, 5000]
 
 const sliderValue = computed({
   get: () => {
     const val = props.config.targetPoints || 3000
+    
+    if (props.uiMode === 'simple') {
+      // 簡易モード時：最も近いステップのインデックス(0-7)を返す
+      let closestIdx = 0
+      let minDiff = Math.abs(val - SIMPLE_STEPS[0])
+      for (let i = 1; i < SIMPLE_STEPS.length; i++) {
+        const diff = Math.abs(val - SIMPLE_STEPS[i])
+        if (diff < minDiff) {
+          minDiff = diff
+          closestIdx = i
+        }
+      }
+      return closestIdx
+    }
+    
+    // プロモード時：3次関数の逆関数で位置を計算
     const normalized = Math.max(0, (val - MIN_POINTS) / (MAX_POINTS - MIN_POINTS))
     return 100 * Math.pow(normalized, 1/3)
   },
   set: (pos) => {
-    // 3乗のカーブを採用することで、低〜中密度域の変化をより「緩やか」にする
+    if (props.uiMode === 'simple') {
+      // 簡易モード時：インデックスに基づいた値を選択
+      const idx = Math.min(SIMPLE_STEPS.length - 1, Math.max(0, Math.round(pos)))
+      localConfig.value.targetPoints = SIMPLE_STEPS[idx]
+      return
+    }
+    
+    // プロモード時：3乗のカーブを採用することで、低〜中密度域の変化をより「緩やか」にする
     const val = Math.round(MIN_POINTS + (MAX_POINTS - MIN_POINTS) * Math.pow(pos / 100, 3))
     localConfig.value.targetPoints = val
   }
@@ -120,10 +144,13 @@ const onTouchEnd = (e) => {
             type="range" 
             v-model.number="sliderValue" 
             :min="0" 
-            :max="100" 
-            step="any"
+            :max="props.uiMode === 'simple' ? 7 : 100" 
+            :step="props.uiMode === 'simple' ? 1 : 'any'"
             class="mini-range"
           />
+          <div v-if="props.uiMode === 'simple'" class="slider-ticks">
+            <span v-for="i in 8" :key="i" class="tick-dot"></span>
+          </div>
         </div>
       </div>
 
@@ -329,6 +356,21 @@ const onTouchEnd = (e) => {
 
 .slider-container {
     flex: 1;
+    position: relative;
+}
+
+.slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 5px;
+    margin-top: 2px;
+}
+
+.tick-dot {
+    width: 3px;
+    height: 3px;
+    background: color-mix(in srgb, var(--accent-color), transparent 70%);
+    border-radius: 50%;
 }
 
 .compact-select {
@@ -541,21 +583,39 @@ button.secondary {
         right: 0;
         bottom: 0;
         width: 100%;
-        max-height: 85vh;
+        max-height: 85svh;
         border-radius: 30px 30px 0 0;
-        transform: translateY(calc(100% - 50px));
+        transform: translateY(calc(100% - 50px)); /* Proモードなどのデフォルトは隠す */
         padding-top: 0;
         overflow-y: visible;
         background: rgba(10, 10, 18, 0.95);
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
+    /* 簡易モードは常に表示、変形なし */
     .ui-panel.mode-simple {
-        width: 100%;
-        padding: 0 0 10px 0; /* ハンドルエリアを確保 */
+        transform: none !important;
+        border-radius: 0;
+        background: linear-gradient(to top, rgba(10, 10, 18, 1) 0%, rgba(10, 10, 18, 0.95) 60%, rgba(10, 10, 18, 0) 100%);
+        /* AndroidのジェスチャーバーやブラウザのUIと重ならないよう底面56pxを死守 */
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 56px);
     }
 
     .ui-panel.is-open {
         transform: translateY(0);
+    }
+
+    /* 簡易モードではハンドルを非表示 */
+    .mode-simple .mobile-handle {
+        display: none;
+    }
+
+    /* 簡易モードのヒント位置調整 (オーバーラップ防止) */
+    .mode-simple .pro-hint {
+        top: 8px;
+        bottom: auto;
+        right: 24px;
+        opacity: 0.15;
     }
 
     .mobile-handle {
@@ -586,12 +646,16 @@ button.secondary {
     }
 
     .simple-mode-content {
-        padding: 10px 24px 30px;
+        padding: 24px 24px 4px; /* ここでも下部に少し余白を設ける */
+    }
+
+    .simple-settings-row {
+        margin-bottom: 8px; /* モバイルではさらに行間を詰めて縦幅を節約 */
     }
 
     .tab-content, .pro-mode-content {
         padding: 0 24px 30px;
-        max-height: calc(85vh - 60px);
+        max-height: calc(85svh - 60px);
         overflow-y: auto;
     }
 

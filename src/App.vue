@@ -22,7 +22,7 @@ const config = reactive({
     enableShadow: true,
     tubeRadius: 0.0005,
     tubeRadialSegments: 6,
-    maxPointsLimit: 10000,
+    maxPointsLimit: 5000,
     captureAspect: '16:9',
     captureOrientation: 'landscape',
     showGuide: true,
@@ -67,8 +67,14 @@ const onFileUpload = (file) => viewport.value?.loadFile(file)
 const onRandomAll = () => {
     if (pointStats.original === 0) return
 
-    // 目標点数を 500〜10,000点 の範囲でランダム化
-    config.targetPoints = Math.floor(Math.random() * 9500) + 500
+    if (uiMode.value === 'simple') {
+        // 簡易モード時：8つのスナップポイントからランダムに選択
+        const SIMPLE_STEPS = [100, 500, 1000, 1500, 2000, 3000, 4000, 5000]
+        config.targetPoints = SIMPLE_STEPS[Math.floor(Math.random() * SIMPLE_STEPS.length)]
+    } else {
+        // プロモード時：目標点数を 500〜5,000点 の範囲でランダム化
+        config.targetPoints = Math.floor(Math.random() * 4500) + 500
+    }
     config.colors.curve = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')
     
     // 接続モードもランダムに
