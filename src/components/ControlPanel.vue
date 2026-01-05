@@ -319,26 +319,30 @@ const onTouchEnd = (e) => {
 <style scoped>
 .ui-panel {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(10, 10, 18, 0.9);
-    padding: 24px;
-    border-radius: 20px;
+    padding: 32px 24px;
+    border-radius: 0;
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
     width: 320px;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
-    max-height: 90vh;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    height: 100%;
     overflow-y: auto;
     z-index: 20;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 簡易モードの独自スタイル */
+/* 簡易モードの独自スタイル (デスクトップ) */
 .mode-simple {
-    width: 240px; /* さらに細身に */
-    padding: 18px;
-    border: 1px solid rgba(0, 255, 255, 0.15);
+    width: 280px;
+    padding: 40px 20px;
+    border-left: 1px solid rgba(0, 255, 255, 0.15);
+    display: flex;
+    flex-direction: column;
 }
 
 .simple-mode-content {
@@ -583,22 +587,27 @@ button.secondary {
         right: 0;
         bottom: 0;
         width: 100%;
+        height: auto;
         max-height: 85svh;
         border-radius: 30px 30px 0 0;
         transform: translateY(calc(100% - 50px)); /* Proモードなどのデフォルトは隠す */
-        padding-top: 0;
+        padding: 0 24px;
         overflow-y: visible;
         background: rgba(10, 10, 18, 0.95);
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
     }
 
     /* 簡易モードは常に表示、変形なし */
     .ui-panel.mode-simple {
         transform: none !important;
         border-radius: 0;
-        background: linear-gradient(to top, rgba(10, 10, 18, 1) 0%, rgba(10, 10, 18, 0.95) 60%, rgba(10, 10, 18, 0) 100%);
-        /* AndroidのジェスチャーバーやブラウザのUIと重ならないよう底面56pxを死守 */
-        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 56px);
+        background: linear-gradient(to top, rgba(10, 10, 18, 1) 0%, rgba(10, 10, 18, 0.95) 70%, rgba(10, 10, 18, 0) 100%);
+        /* AndroidのジェスチャーバーやブラウザのUIと重ならないよう底面32pxを確保 */
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
+        padding-top: 40px; /* グラデーションの頂点をずらすための上部パディング */
     }
 
     .ui-panel.is-open {
@@ -646,7 +655,7 @@ button.secondary {
     }
 
     .simple-mode-content {
-        padding: 24px 24px 4px; /* ここでも下部に少し余白を設ける */
+        padding: 0 0 4px; /* 親のpaddingと合わせて調整 */
     }
 
     .simple-settings-row {
