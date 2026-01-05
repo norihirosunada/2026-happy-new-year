@@ -2,6 +2,7 @@
 import { reactive, ref, onMounted, onUnmounted } from 'vue'
 import ThreeViewport from './components/ThreeViewport.vue'
 import ControlPanel from './components/ControlPanel.vue'
+import horseModelUrl from './assets/horse_head.glb?url'
 
 const config = reactive({
     connectionMode: 'nearest',
@@ -95,7 +96,7 @@ onMounted(() => {
     window.addEventListener('keydown', handleKeydown)
     // 初期モデル読み込み
     setTimeout(() => {
-        viewport.value?.loadFromUrl('/src/public/horse_head.glb')
+        viewport.value?.loadFromUrl(horseModelUrl)
     }, 500)
 })
 
