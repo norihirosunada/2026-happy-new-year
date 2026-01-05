@@ -19,6 +19,7 @@ const emit = defineEmits(['stats-update'])
 const container = ref(null)
 let scene, camera, renderer, composer, bloomPass, controls, gridHelper
 let matteFloor, reflectorFloor
+let ambientLight, spotLight, dirLight
 let rawPointCloud, featurePointsMesh, smoothCurveMesh
 let originalPoints = []
 let workingPoints = []
@@ -76,15 +77,20 @@ const init = () => {
     })
 
     resetIdleTimer() // 初期タイマー開始
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+    
+    ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+    ambientLight.visible = props.config.enableAmbientLight !== false
     scene.add(ambientLight)
-    const spotLight = new THREE.SpotLight(0xffffff, 2000)
+    
+    spotLight = new THREE.SpotLight(0xffffff, 2000)
     spotLight.position.set(0, 100, 0)
     spotLight.castShadow = true
+    spotLight.visible = props.config.enableSpotLight !== false
     scene.add(spotLight)
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5)
+    
+    dirLight = new THREE.DirectionalLight(0xffffff, 0.5)
     dirLight.position.set(50, 50, 50)
+    dirLight.visible = props.config.enableDirectionalLight !== false
     scene.add(dirLight)
 
     animate()
@@ -206,7 +212,7 @@ const fitCamera = () => {
     const maxDim = Math.max(size.x, size.y, size.z)
     const fov = camera.fov * (Math.PI / 180)
     let cameraDist = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.5
-    camera.position.copy(center.clone().add(new THREE.Vector3(maxDim * 0.5, maxDim * 0.5, cameraDist)))
+    camera.position.copy(center.clone().add(new THREE.Vector3(maxDim * 0.5, maxDim * 0.1, cameraDist)))
     camera.lookAt(center); controls.target.copy(center); controls.update()
 }
 
@@ -301,8 +307,8 @@ const updateVisuals = () => {
                 color: props.config.colors.curve, 
                 roughness: 0.3, 
                 metalness: 0.5,
-                emissive: props.config.enableBloom ? props.config.colors.curve : 0x000000,
-                emissiveIntensity: props.config.enableBloom ? 0.5 : 0
+                emissive: (props.config.enableTubeEmissive && props.config.enableBloom) ? props.config.colors.curve : 0x000000,
+                emissiveIntensity: (props.config.enableTubeEmissive && props.config.enableBloom) ? 0.5 : 0
             })
             smoothCurveMesh = new THREE.Mesh(tubeGeo, tubeMat)
             smoothCurveMesh.castShadow = true
@@ -328,10 +334,14 @@ watch(() => props.config.featurePointSize, updateVisuals)
 watch(() => props.config.showRaw, updateVisuals)
 watch(() => props.config.showFeatures, updateVisuals)
 watch(() => props.config.showCurve, updateVisuals)
+watch(() => props.config.enableTubeEmissive, updateVisuals)
 watch(() => props.config.floorMode, () => { updateFloorVisibility(); updateVisuals() })
 watch(() => props.config.bloomStrength, updateBloomSettings)
 watch(() => props.config.colors.background, (val) => scene.background.set(val))
 watch(() => props.config.colors.curve, updateVisuals)
+watch(() => props.config.enableAmbientLight, (val) => { if(ambientLight) ambientLight.visible = val })
+watch(() => props.config.enableSpotLight, (val) => { if(spotLight) spotLight.visible = val })
+watch(() => props.config.enableDirectionalLight, (val) => { if(dirLight) dirLight.visible = val })
 
 defineExpose({ generateDemoData, fitCamera, takeScreenshot, loadFile, loadFromUrl })
 

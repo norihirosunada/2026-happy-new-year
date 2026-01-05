@@ -4,21 +4,30 @@ import ThreeViewport from './components/ThreeViewport.vue'
 import ControlPanel from './components/ControlPanel.vue'
 import horseModelUrl from './assets/horse_head.glb?url'
 
+const initialConnectionMode = Math.random() > 0.5 ? 'nearest' : 'contour'
+const axes = ['x', 'y', 'z']
+const initialSliceAxis = axes[Math.floor(Math.random() * axes.length)]
+const initialSliceCount = Math.floor(Math.random() * 100) + 20
+
 const config = reactive({
-    connectionMode: 'nearest',
+    connectionMode: initialConnectionMode,
     samplingMode: 'random',
-    targetPoints: 3000,
+    targetPoints: Math.floor(Math.random() * 4500) + 500,
     curveTension: 0.5,
     rawPointSize: 0.15,
     featurePointSize: 0.5,
-    sliceCount: 50,
-    sliceAxis: 'y',
+    sliceCount: initialSliceCount,
+    sliceAxis: initialSliceAxis,
     clusterCount: 10,
     enableBloom: true,
     bloomStrength: 1.5,
     bloomThreshold: 0,
     bloomRadius: 0.5,
     floorMode: 'matte',
+    enableTubeEmissive: true,
+    enableAmbientLight: false,
+    enableSpotLight: false,
+    enableDirectionalLight: false,
     enableShadow: true,
     tubeRadius: 0.0005,
     tubeRadialSegments: 6,
@@ -33,7 +42,7 @@ const config = reactive({
     colors: {
         raw: '#666666',
         feature: '#ff0055',
-        curve: '#00ffff',
+        curve: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'),
         background: '#050505'
     }
 })
@@ -126,6 +135,7 @@ onUnmounted(() => {
         @reset="onReset"
         @file-upload="onFileUpload"
         @random-all="onRandomAll"
+        @toggle-mode="uiMode = uiMode === 'simple' ? 'pro' : 'simple'"
     />
   </div>
 </template>

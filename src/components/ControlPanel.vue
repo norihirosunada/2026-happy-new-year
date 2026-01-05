@@ -14,7 +14,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:config', 'update:isOpen', 'capture', 'demo', 'reset', 'random-all', 'random-camera', 'file-upload'])
+const emit = defineEmits(['update:config', 'update:isOpen', 'capture', 'demo', 'reset', 'random-all', 'random-camera', 'file-upload', 'toggle-mode'])
 
 const activeTab = ref('data')
 const touchStartY = ref(0)
@@ -164,14 +164,18 @@ const onTouchEnd = (e) => {
         </button>
       </div>
       
-      <div class="pro-hint">
+      <div class="pro-hint" @click="emit('toggle-mode')">
         <span class="dot"></span> Dev Mode ⇧⌘P
       </div>
     </div>
 
     <!-- プロモード UI (既存) -->
     <div v-else class="pro-mode-content">
-      <h2 class="text-xl font-bold mb-4 pb-2 border-b border-gray-700 hidden md:block">Pro Mode Settings</h2>
+      <div class="flex justify-end items-center mb-4 pb-2">
+          <button @click="emit('toggle-mode')" class="close-icon-btn" title="Exit Pro Mode">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+      </div>
 
       <!-- タブヘッダー -->
       <div class="tabs-header mb-4">
@@ -266,6 +270,19 @@ const onTouchEnd = (e) => {
               <label class="flex items-center gap-1"><input type="radio" v-model="localConfig.floorMode" value="matte"> Matte</label>
               <label class="flex items-center gap-1"><input type="radio" v-model="localConfig.floorMode" value="reflector"> 反射</label>
             </div>
+
+            <div class="section-title mt-6">ライティング</div>
+            <div class="flex flex-col gap-2">
+                <label class="flex items-center gap-2 mb-0">
+                    <input type="checkbox" v-model="localConfig.enableAmbientLight"> 環境光 (Ambient)
+                </label>
+                <label class="flex items-center gap-2 mb-0">
+                    <input type="checkbox" v-model="localConfig.enableSpotLight"> スポットライト (Main)
+                </label>
+                <label class="flex items-center gap-2 mb-0">
+                    <input type="checkbox" v-model="localConfig.enableDirectionalLight"> 並行光 (Sub)
+                </label>
+            </div>
           </div>
         </div>
 
@@ -288,7 +305,11 @@ const onTouchEnd = (e) => {
 
             <div v-if="localConfig.enableShadow" class="pl-4 border-l border-gray-600 mt-2 mb-4">
                 <label class="flex justify-between">太さ <span>{{ localConfig.tubeRadius }}</span></label>
-                <input type="range" v-model.number="localConfig.tubeRadius" min="0.001" max="0.5" step="0.001">
+                <input type="range" v-model.number="localConfig.tubeRadius" min="0.001" max="0.5" step="0.001" class="mb-2">
+                
+                <label class="flex items-center gap-2 mb-1">
+                  <input type="checkbox" v-model="localConfig.enableTubeEmissive"> チューブ発光
+                </label>
             </div>
             
             <label class="flex items-center gap-2 mb-2">
@@ -479,6 +500,27 @@ const onTouchEnd = (e) => {
     transform: scale(0.95);
 }
 
+.close-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.close-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: rotate(90deg);
+}
+
 .pro-hint {
     position: absolute;
     bottom: 12px;
@@ -488,6 +530,12 @@ const onTouchEnd = (e) => {
     display: flex;
     align-items: center;
     gap: 6px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.pro-hint:hover {
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .pro-hint .dot {
